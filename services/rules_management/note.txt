@@ -1,0 +1,11 @@
+service ini cuma buat operasi CRUD rules ke dan dari database.
+service ini tidak ada rules engine execution
+
+
+services ini:
+1. insert individual rule based on its rule set
+2. insert rule set
+3. update individual rule based on its rule set
+4. delete a single rule based on its rule set
+5. delete entire rule set
+6. list all rule set
