@@ -4,6 +4,7 @@ import (
 	"brms/pkg/db"
 	"brms/services/rules_management/models"
 	"context"
+	"fmt"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -25,6 +26,12 @@ func InsertSpecificRule(ruleSetName string, insertedRule models.Rule) error{
 
 	if err := collectionName.FindOne(ctx, filter).Decode(&checkRuleSet); err != nil{
 		return err
+	}
+
+	for _, rule := range checkRuleSet.Rules{
+		if rule.Name == insertedRule.Name{
+			return fmt.Errorf("rule already exists")
+		}
 	}
 
 	newRuleSet := models.RuleSet{
