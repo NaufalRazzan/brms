@@ -2,8 +2,10 @@ package main
 
 import (
 	"brms/config"
+	"brms/pkg/middlewares"
 	"brms/services/rules_management/handlers"
 	"fmt"
+	"log"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/logger"
@@ -15,14 +17,15 @@ func main() {
 
 	app.Use(recover.New())
 	app.Use(logger.New())
+	app.Use(middlewares.UndefinedRoutesMiddleware)
+	app.Use(middlewares.ErrorMiddleware)
 
+	// register routes
 	handlers.Routes(app)
 
 	listenPort := fmt.Sprintf(":%s", config.GetConfig().Port)
 
 	if err := app.Listen(listenPort); err != nil {
-		panic(err)
+		log.Fatalln("application failed to fired up: ", err)
 	}
-
-	fmt.Println("Application start and running!")
 }

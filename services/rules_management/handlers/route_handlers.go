@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"brms/pkg/errors"
 	"brms/pkg/response"
 	"brms/services/rules_management/controllers"
 	"brms/services/rules_management/models"
@@ -25,35 +24,35 @@ func Routes(app *fiber.App) {
 	ruleEngine.Delete("/removeSpecificRule", DeleteOneRule)
 }
 
-func InsertOneRule(c *fiber.Ctx) error{
-	if c.Method() != fiber.MethodPost{
-		return c.Status(fiber.StatusMethodNotAllowed).JSON(errors.MethodNotAllowed("invalid http method"))
+func InsertOneRule(c *fiber.Ctx) error {
+	if c.Method() != fiber.MethodPost {
+		return fiber.NewError(fiber.StatusMethodNotAllowed, "invalid http method")
 	}
 
 	ruleSetname := c.Query("ruleSetName")
 
-	if ruleSetname == ""{
-		return c.Status(fiber.StatusBadRequest).JSON(errors.BadRequest("empty query field"))
+	if ruleSetname == "" {
+		return fiber.NewError(fiber.StatusBadRequest, "empty query field")
 	}
 
 	var insertedRule models.Rule
 
-	if err := c.BodyParser(&insertedRule); err != nil{
-		return c.Status(fiber.StatusUnprocessableEntity).JSON(errors.UnprocessableEntity("The request entity contains invalid or missing data"))
+	if err := c.BodyParser(&insertedRule); err != nil {
+		return fiber.NewError(fiber.StatusUnprocessableEntity, "The request entity contains invalid or missing data")
 	}
 
-	if insertedRule.Name == "" || len(insertedRule.Conditions) == 0 || len(insertedRule.Actions) == 0{
-		return c.Status(fiber.StatusBadRequest).JSON(errors.BadRequest("empty field"))
+	if insertedRule.Name == "" || len(insertedRule.Conditions) == 0 || len(insertedRule.Actions) == 0 {
+		return fiber.NewError(fiber.StatusBadRequest, "empty fields")
 	}
 
-	if err := controllers.InsertSpecificRule(ruleSetname, insertedRule); err != nil{
-		if err == mongo.ErrNoDocuments{
-			return c.Status(fiber.StatusNotFound).JSON(errors.NotFound("rule set not found"))
+	if err := controllers.InsertSpecificRule(ruleSetname, insertedRule); err != nil {
+		if err == mongo.ErrNoDocuments {
+			return fiber.NewError(fiber.StatusNotFound, "rule set not found")
 		}
-		if err.Error() == "rule already exists"{
-			return c.Status(fiber.StatusConflict).JSON(errors.Conflict(err.Error()))
-		} 
-		return c.Status(fiber.StatusInternalServerError).JSON(errors.InternalServerError(err.Error()))
+		if err.Error() == "rule already exists" {
+			return fiber.NewError(fiber.StatusConflict, err.Error())
+		}
+		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
 
 	return c.Status(fiber.StatusCreated).JSON(response.StatusCreated("new rule appended", &fiber.Map{
@@ -61,33 +60,33 @@ func InsertOneRule(c *fiber.Ctx) error{
 	}))
 }
 
-func UpdateOneRule(c *fiber.Ctx) error{
-	if c.Method() != fiber.MethodPatch{
-		return c.Status(fiber.StatusMethodNotAllowed).JSON(errors.MethodNotAllowed("invalid http method"))
+func UpdateOneRule(c *fiber.Ctx) error {
+	if c.Method() != fiber.MethodPatch {
+		return fiber.NewError(fiber.StatusMethodNotAllowed, "invalid http method")
 	}
 
 	ruleSetName := c.Query("ruleSetName")
 	ruleName := c.Query("ruleName")
 
-	if ruleSetName == "" || ruleName == ""{
-		return c.Status(fiber.StatusBadRequest).JSON(errors.BadRequest("empty query fields"))
+	if ruleSetName == "" || ruleName == "" {
+		return fiber.NewError(fiber.StatusBadRequest, "empty query fields")
 	}
 
 	var updatedRule models.Rule
 
-	if err := c.BodyParser(&updatedRule); err != nil{
-		return c.Status(fiber.StatusUnprocessableEntity).JSON(errors.UnprocessableEntity("The request entity contains invalid or missing data"))
+	if err := c.BodyParser(&updatedRule); err != nil {
+		return fiber.NewError(fiber.StatusUnprocessableEntity, "The request entity contains invalid or missing data")
 	}
 
-	if updatedRule.Name == "" || len(updatedRule.Conditions) == 0 || len(updatedRule.Actions) == 0{
-		return c.Status(fiber.StatusBadRequest).JSON(errors.BadRequest("empty fields"))
+	if updatedRule.Name == "" || len(updatedRule.Conditions) == 0 || len(updatedRule.Actions) == 0 {
+		return fiber.NewError(fiber.StatusBadRequest, "empty fields")
 	}
 
-	if err := controllers.UpdateSpecificRule(ruleSetName, ruleName, updatedRule); err != nil{
-		if err == mongo.ErrNoDocuments{
-			return c.Status(fiber.StatusNotFound).JSON(errors.NotFound("rule set or rule name does not exist"))
+	if err := controllers.UpdateSpecificRule(ruleSetName, ruleName, updatedRule); err != nil {
+		if err == mongo.ErrNoDocuments {
+			return fiber.NewError(fiber.StatusNotFound, "rule set or rule name does not exist")
 		}
-		return c.Status(fiber.StatusInternalServerError).JSON(errors.InternalServerError(err.Error()))
+		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
 
 	return c.Status(fiber.StatusOK).JSON(response.StatusOK("updated one rule", &fiber.Map{
@@ -95,23 +94,23 @@ func UpdateOneRule(c *fiber.Ctx) error{
 	}))
 }
 
-func DeleteOneRule(c *fiber.Ctx) error{
-	if c.Method() != fiber.MethodDelete{
-		return c.Status(fiber.StatusMethodNotAllowed).JSON(errors.MethodNotAllowed("invalid http method"))
+func DeleteOneRule(c *fiber.Ctx) error {
+	if c.Method() != fiber.MethodDelete {
+		return fiber.NewError(fiber.StatusMethodNotAllowed, "invalid http method")
 	}
 
 	ruleSetName := c.Query("ruleSetName")
 	ruleName := c.Query("ruleName")
 
-	if ruleSetName == "" || ruleName == ""{
-		return c.Status(fiber.StatusBadRequest).JSON(errors.BadRequest("empty query fields"))
+	if ruleSetName == "" || ruleName == "" {
+		return fiber.NewError(fiber.StatusBadRequest, "empty query fields")
 	}
 
-	if err := controllers.DeleteSpecificRule(ruleSetName, ruleName); err != nil{
-		if err == mongo.ErrNoDocuments{
-			return c.Status(fiber.StatusNotFound).JSON(errors.NotFound("rule set or rule name does not exists"))
+	if err := controllers.DeleteSpecificRule(ruleSetName, ruleName); err != nil {
+		if err == mongo.ErrNoDocuments {
+			return fiber.NewError(fiber.StatusNotFound, "rule set or rule name does not exists")
 		}
-		return c.Status(fiber.StatusInternalServerError).JSON(errors.InternalServerError(err.Error()))
+		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
 
 	return c.Status(fiber.StatusOK).JSON(response.StatusOK("one rule deleted", &fiber.Map{
@@ -121,25 +120,25 @@ func DeleteOneRule(c *fiber.Ctx) error{
 
 func InsertRuleSet(c *fiber.Ctx) error {
 	if c.Method() != fiber.MethodPost {
-		return c.Status(fiber.StatusMethodNotAllowed).JSON(errors.MethodNotAllowed("invalid http method"))
+		return fiber.NewError(fiber.StatusMethodNotAllowed, "invalid http method")
 	}
 
 	var ruleSet models.RuleSet
 
 	if err := c.BodyParser(&ruleSet); err != nil {
-		return c.Status(fiber.StatusUnprocessableEntity).JSON(errors.UnprocessableEntity("The request entity contains invalid or missing data"))
+		return fiber.NewError(fiber.StatusUnprocessableEntity, "The request entity contains invalid or missing data")
 	}
 
 	if ruleSet.RuleSetName == "" || len(ruleSet.Rules) == 0 {
-		return c.Status(fiber.StatusBadRequest).JSON(errors.BadRequest("empty fields"))
+		return fiber.NewError(fiber.StatusBadRequest, "empty fields")
 	}
 
 	// insert semua ruleset
 	if err := controllers.InsertRuleSet(ruleSet); err != nil {
 		if mongo.IsDuplicateKeyError(err) {
-			return c.Status(fiber.StatusConflict).JSON(errors.Conflict(err.Error()))
+			return fiber.NewError(fiber.StatusConflict, err.Error())
 		}
-		return c.Status(fiber.StatusInternalServerError).JSON(errors.InternalServerError(err.Error()))
+		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
 
 	return c.Status(fiber.StatusCreated).JSON(response.StatusCreated("new rule set inserted", &fiber.Map{"details": "new rule set created"}))
@@ -147,13 +146,13 @@ func InsertRuleSet(c *fiber.Ctx) error {
 
 func ListAllRuleSet(c *fiber.Ctx) error {
 	if c.Method() != fiber.MethodGet {
-		return c.Status(fiber.StatusMethodNotAllowed).JSON(errors.MethodNotAllowed("invalid http method"))
+		return fiber.NewError(fiber.StatusMethodNotAllowed, "invalid http method")
 	}
 
 	// fetch all rule set
 	listRuleSet, err := controllers.FindAllRuleSet()
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(errors.InternalServerError(err.Error()))
+		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
 
 	if len(listRuleSet) == 0 {
@@ -167,19 +166,19 @@ func ListAllRuleSet(c *fiber.Ctx) error {
 
 func DeleteOneRuleSet(c *fiber.Ctx) error {
 	if c.Method() != fiber.MethodDelete {
-		return c.Status(fiber.StatusMethodNotAllowed).JSON(errors.MethodNotAllowed("invalid http method"))
+		return fiber.NewError(fiber.StatusMethodNotAllowed, "invalid http method")
 	}
 
 	ruleSetName := c.Query("ruleSetName")
 	if ruleSetName == "" {
-		return c.Status(fiber.StatusBadRequest).JSON(errors.BadRequest("invalid query parameter"))
+		return fiber.NewError(fiber.StatusBadRequest, "invalid query parameter")
 	}
 
 	if err := controllers.DeleteRuleSet(ruleSetName); err != nil {
 		if err == mongo.ErrNoDocuments {
-			return c.Status(fiber.StatusNotFound).JSON(errors.NotFound(err.Error()))
+			return fiber.NewError(fiber.StatusNotFound, err.Error())
 		}
-		return c.Status(fiber.StatusInternalServerError).JSON(errors.InternalServerError(err.Error()))
+		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
 
 	return c.Status(fiber.StatusOK).JSON(response.StatusOK("Rule set deleted", &fiber.Map{
