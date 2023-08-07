@@ -41,8 +41,12 @@ func InsertOneRule(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusUnprocessableEntity, "The request entity contains invalid or missing data")
 	}
 
-	if insertedRule.Name == "" || len(insertedRule.Conditions) == 0 || len(insertedRule.Actions) == 0 {
+	if insertedRule.RuleType == "" || len(insertedRule.Conditions) == 0 || insertedRule.Action == nil {
 		return fiber.NewError(fiber.StatusBadRequest, "empty fields")
+	}
+
+	if insertedRule.RuleType != "orCondition" && insertedRule.RuleType != "andCondition" {
+		return fiber.NewError(fiber.StatusBadRequest, "rule type must either \"orCondition\" or \"anaCondition\" (case sensitive)")
 	}
 
 	if err := controllers.InsertSpecificRule(ruleSetname, insertedRule); err != nil {
@@ -66,9 +70,9 @@ func UpdateOneRule(c *fiber.Ctx) error {
 	}
 
 	ruleSetName := c.Query("ruleSetName")
-	ruleName := c.Query("ruleName")
+	ruleID := c.Query("ruleID")
 
-	if ruleSetName == "" || ruleName == "" {
+	if ruleSetName == "" || ruleID == "" {
 		return fiber.NewError(fiber.StatusBadRequest, "empty query fields")
 	}
 
@@ -78,11 +82,11 @@ func UpdateOneRule(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusUnprocessableEntity, "The request entity contains invalid or missing data")
 	}
 
-	if updatedRule.Name == "" || len(updatedRule.Conditions) == 0 || len(updatedRule.Actions) == 0 {
+	if len(updatedRule.Conditions) == 0 || updatedRule.Action == nil {
 		return fiber.NewError(fiber.StatusBadRequest, "empty fields")
 	}
 
-	if err := controllers.UpdateSpecificRule(ruleSetName, ruleName, updatedRule); err != nil {
+	if err := controllers.UpdateSpecificRule(ruleSetName, ruleID, updatedRule); err != nil {
 		if err == mongo.ErrNoDocuments {
 			return fiber.NewError(fiber.StatusNotFound, "rule set or rule name does not exist")
 		}
@@ -90,7 +94,7 @@ func UpdateOneRule(c *fiber.Ctx) error {
 	}
 
 	return c.Status(fiber.StatusOK).JSON(response.StatusOK("updated one rule", &fiber.Map{
-		"details": fmt.Sprintf("rule %s has been updated on rule set %s", ruleName, ruleSetName),
+		"details": fmt.Sprintf("rule %s has been updated on rule set %s", ruleID, ruleSetName),
 	}))
 }
 
@@ -100,13 +104,13 @@ func DeleteOneRule(c *fiber.Ctx) error {
 	}
 
 	ruleSetName := c.Query("ruleSetName")
-	ruleName := c.Query("ruleName")
+	ruleID := c.Query("ruleID")
 
-	if ruleSetName == "" || ruleName == "" {
+	if ruleSetName == "" || ruleID == "" {
 		return fiber.NewError(fiber.StatusBadRequest, "empty query fields")
 	}
 
-	if err := controllers.DeleteSpecificRule(ruleSetName, ruleName); err != nil {
+	if err := controllers.DeleteSpecificRule(ruleSetName, ruleID); err != nil {
 		if err == mongo.ErrNoDocuments {
 			return fiber.NewError(fiber.StatusNotFound, "rule set or rule name does not exists")
 		}
@@ -114,7 +118,7 @@ func DeleteOneRule(c *fiber.Ctx) error {
 	}
 
 	return c.Status(fiber.StatusOK).JSON(response.StatusOK("one rule deleted", &fiber.Map{
-		"details": fmt.Sprintf("rule %s has been deleted from rule set %s", ruleName, ruleSetName),
+		"details": fmt.Sprintf("rule %s has been deleted from rule set %s", ruleID, ruleSetName),
 	}))
 }
 
@@ -131,6 +135,15 @@ func InsertRuleSet(c *fiber.Ctx) error {
 
 	if ruleSet.RuleSetName == "" || len(ruleSet.Rules) == 0 {
 		return fiber.NewError(fiber.StatusBadRequest, "empty fields")
+	}
+
+	for i := range ruleSet.Rules {
+		if ruleSet.Rules[i].RuleType == "" || len(ruleSet.Rules[i].Conditions) == 0 || ruleSet.Rules[i].Action == nil {
+			return fiber.NewError(fiber.StatusBadRequest, "empty rule fields")
+		}
+		if ruleSet.Rules[i].RuleType != "orCondition" && ruleSet.Rules[i].RuleType != "andCondition" {
+			return fiber.NewError(fiber.StatusBadRequest, fmt.Sprintf("rule type must either \"orCondition\" or \"andCondition\" on rule index %d (case sensitive)", i+1))
+		}
 	}
 
 	// insert semua ruleset
@@ -176,7 +189,7 @@ func DeleteOneRuleSet(c *fiber.Ctx) error {
 
 	if err := controllers.DeleteRuleSet(ruleSetName); err != nil {
 		if err == mongo.ErrNoDocuments {
-			return fiber.NewError(fiber.StatusNotFound, err.Error())
+			return fiber.NewError(fiber.StatusNotFound, fmt.Sprintf("no rule set with name %s matched with specified rule set name", ruleSetName))
 		}
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}

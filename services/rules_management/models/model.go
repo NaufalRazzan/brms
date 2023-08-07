@@ -1,9 +1,10 @@
 package models
 
 type Rule struct {
-	Name       string   `bson:"name" json:"name"`
-	Conditions []string `bson:"condition" json:"condition"`
-	Actions    []string `bson:"actions" json:"actions"`
+	RuleID     string      `bson:"ruleid" json:"ruleid"`
+	RuleType   string      `bson:"ruletype" json:"ruletype"`
+	Conditions []string    `bson:"conditions" json:"conditions"`
+	Action     interface{} `bson:"action" json:"action"`
 }
 
 type RuleSet struct {

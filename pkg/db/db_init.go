@@ -17,11 +17,11 @@ func ConnectDB(collectionName string) (*mongo.Client, *mongo.Collection, error) 
 
 	client, err := mongo.Connect(ctx, options.Client().ApplyURI(config.GetConfig().MongoDBUrl))
 	if err != nil {
-		panic(err)
+		return nil, nil, err
 	}
 
 	if err := client.Ping(ctx, readpref.Primary()); err != nil {
-		panic(err)
+		return nil, nil, err
 	}
 
 	log.Println("Connected to MongoDB")

@@ -17,8 +17,8 @@ func main() {
 
 	app.Use(recover.New())
 	app.Use(logger.New())
-	app.Use(middlewares.UndefinedRoutesMiddleware)
-	app.Use(middlewares.ErrorMiddleware)
+	//app.Use(middlewares.UndefinedRoutesMiddleware)
+	app.Use(middlewares.ErrorMiddleware())
 
 	// register routes
 	handlers.Routes(app)
